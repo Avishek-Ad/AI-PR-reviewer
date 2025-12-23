@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block head_title %}AI Code Review | Secure Login{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-radial-[at_25%_25%] from-slate-900 via-slate-950 to-black p-4">
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/10 blur-[120px] rounded-full"></div>
+        <div class="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-secondary/10 blur-[120px] rounded-full"></div>
+    </div>
+
+    <div class="max-w-md w-full">
+        <div class="text-center mb-10">
+            <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-tr from-primary to-secondary p-0.5 shadow-2xl mb-6">
+                <div class="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="16 18 22 12 16 6"></polyline>
+                        <polyline points="8 6 2 12 8 18"></polyline>
+                        <line x1="12" y1="2" x2="12" y2="22"></line>
+                    </svg>
+                </div>
+            </div>
+            <h1 class="text-4xl font-extrabold tracking-tight text-white mb-3">
+                AI Code Review
+            </h1>
+            <p class="text-slate-400 text-lg">
+                Automate your PR reviews with intelligence.
+            </p>
+        </div>
+
+        <div class="card bg-slate-900/50 backdrop-blur-xl border border-white/10 shadow-2xl">
+            <div class="card-body p-8">
+                {% if user.is_authenticated %}
+                <h2 class="flex flex-col text-xl font-semibold text-white text-center mb-6">
+                    Welcome back
+                    <span class="text-primary">
+                        {{user.username}}
+                    </span>
+                    </h2>
+                <a href='{% url "dashboard-page" %}'>
+                    <button class="btn btn btn-lg w-full bg-[#24292F] hover:bg-[#24292F]/90 text-white border-none normal-case flex items-center gap-3 group">
+                        Continue to dashboard
+                        <svg  xmlns="http://www.w3.org/2000/svg" width="20" height="20"  
+                            fill="currentColor" viewBox="0 0 24 24" >
+                            <path d="m20,11h-6c-.55,0-1,.45-1,1v8c0,.55.45,1,1,1h6c.55,0,1-.45,1-1v-8c0-.55-.45-1-1-1Zm-1,8h-4v-6h4v6Z"></path><path d="m10,15h-6c-.55,0-1,.45-1,1v4c0,.55.45,1,1,1h6c.55,0,1-.45,1-1v-4c0-.55-.45-1-1-1Zm-1,4h-4v-2h4v2Z"></path><path d="m20,3h-6c-.55,0-1,.45-1,1v4c0,.55.45,1,1,1h6c.55,0,1-.45,1-1v-4c0-.55-.45-1-1-1Zm-1,4h-4v-2h4v2Z"></path><path d="m10,3h-6c-.55,0-1,.45-1,1v8c0,.55.45,1,1,1h6c.55,0,1-.45,1-1V4c0-.55-.45-1-1-1Zm-1,8h-4v-6h4v6Z"></path>
+                        </svg>
+                    </button>
+                </a>
+                {% else %}
+                <h2 class="text-xl font-semibold text-white text-center mb-6">Let's get started</h2>
+                <a href='{% url "github_login" %}'>
+                    <button class="btn btn-lg w-full bg-[#24292F] hover:bg-[#24292F]/90 text-white border-none normal-case flex items-center gap-3 group">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+                        </svg>
+                        Continue with GitHub
+                    </button>
+                </a>
+                {% endif %}
+
+                <div class="mt-8 pt-6 border-t border-white/5">
+                    <div class="flex items-center gap-2 justify-center text-xs text-slate-500 uppercase tracking-widest font-medium">
+                        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                        Secure Authentication
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p class="mt-8 text-center text-slate-500 text-sm">
+            By signing in, you agree to allow us access to your public repositories for code analysis.
+        </p>
+    </div>
+</div>
+{% endblock %}

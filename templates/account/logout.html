@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block head_title %}{% trans "Sign Out" %}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-radial-[at_25%_25%] from-slate-900 via-slate-950 to-black p-4">
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-error/10 blur-[120px] rounded-full"></div>
+    </div>
+
+    <div class="max-w-md w-full relative z-10">
+        <div class="card bg-slate-900/50 backdrop-blur-xl border border-white/10 shadow-2xl">
+            <div class="card-body p-8 text-center">
+                <div class="mx-auto w-16 h-16 rounded-full bg-error/10 flex items-center justify-center mb-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                </div>
+
+                <h1 class="text-2xl font-bold text-white mb-2">{% trans "Sign Out" %}</h1>
+                <p class="text-slate-400 mb-8">
+                    {% trans 'Are you sure you want to sign out of your AI Code Review account?' %}
+                </p>
+
+                <div class="flex flex-col gap-3">
+                    <form method="post" action="{% url 'account_logout' %}">
+                        {% csrf_token %}
+                        {% if redirect_field_value %}
+                            <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}"/>
+                        {% endif %}
+                        <button type="submit" class="btn btn-error w-full text-white shadow-lg shadow-error/20">
+                            {% trans 'Sign Out' %}
+                        </button>
+                    </form>
+                    
+                    <a href="{% url 'dashboard-page' %}" class="btn btn-ghost text-slate-400 hover:text-black">
+                        {% trans 'Cancel' %}
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <p class="mt-6 text-center text-xs text-slate-600 uppercase tracking-widest font-semibold">
+            Secure Session Management
+        </p>
+    </div>
+</div>
+{% endblock content %}
