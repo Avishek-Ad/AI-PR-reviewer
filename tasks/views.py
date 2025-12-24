@@ -133,7 +133,7 @@ def task_create(request):
             # the github will send a webhook with action="created" when created a webhook
             return HttpResponseClientRedirect('https://github.com/apps/mine-ai-code-reviewer/installations/new')
         # create task entry, github installation entry and repository entry
-        if repo.tasks:
+        if repo.tasks.filter(user=request.user).exists():
             return render(request, 'tasks/partials/error.html', {'message': "A task already existes for this Repository"})
         Task.objects.create(
             repository = repo,
@@ -141,7 +141,7 @@ def task_create(request):
             user= request.user,
             status= Task.InstallationStatus.INSTALLED,
         )
-        return redirect('dashboard-page')
+        return HttpResponseClientRedirect('dashboard-page')
 
     # cache 10 minute
     repos = cache.get(f"{request.user.pk}-repos")
