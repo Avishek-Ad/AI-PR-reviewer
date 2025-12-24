@@ -4,10 +4,16 @@ from django.contrib.auth.models import User
 import uuid
 
 class Task(models.Model):
+    class InstallationStatus(models.TextChoices):
+        PENDING = 'pending'
+        INSTALLED = 'installed'
+    
     id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
-    repository = models.ForeignKey(Repository, on_delete=models.CASCADE)
+    repository = models.ForeignKey(Repository, related_name='tasks', on_delete=models.CASCADE, null=True)
+    repository_github_id = models.BigIntegerField()
     user = models.ForeignKey(User, related_name='tasks', on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
+    status = models.CharField(max_length=10, choices=InstallationStatus.choices, default=InstallationStatus.PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -19,7 +25,7 @@ class Task(models.Model):
         ]
 
     def __str__(self):
-        return f"Task for {self.repository.full_name} by {self.user.username}"
+        return f"Task for {self.repository_github_id} by {self.user.username}"
     
 class PullRequestEvent(models.Model):
     id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)

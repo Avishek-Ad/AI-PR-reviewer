@@ -25,4 +25,5 @@ urlpatterns = [
     path('accounts/logout/', LogoutView.as_view(), name="account_logout"),
     path('', include('main.urls')),
     path('task/', include('tasks.urls')),
+    path('github/', include('github_app.urls'))
 ]

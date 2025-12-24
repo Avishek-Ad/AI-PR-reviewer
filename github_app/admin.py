@@ -1,3 +1,5 @@
 from django.contrib import admin
+from .models import Repository, GithubAppInstallation
 
-# Register your models here.
+admin.site.register(GithubAppInstallation)
+admin.site.register(Repository)
