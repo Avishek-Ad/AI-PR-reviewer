@@ -6,6 +6,7 @@ from .services import handle_task_related_event, is_comming_form_github
 from tasks.models import Task, PullRequestEvent
 from allauth.socialaccount.models import SocialAccount
 from github_app.models import Repository
+from reviews.tasks import review_pr
 
 @csrf_exempt
 def github_webhook(request):
@@ -35,7 +36,6 @@ def github_webhook(request):
         if not social_account:
             return HttpResponseNotFound()
         user = social_account.user
-        print("user found")
         task = get_object_or_404(Task, user=user, repository_github_id=payload_repo_id, status=Task.InstallationStatus.INSTALLED)
         
         delivery_id = request.headers.get("X-GitHub-Delivery")
@@ -46,7 +46,8 @@ def github_webhook(request):
             "diff_url": payload['pull_request']['diff_url'],
             "post_url": payload['pull_request']['review_comments_url'],
             "commit_sha": payload['pull_request']['head']['sha'],
-            "pr_number": payload['number']
+            "pr_number": payload['number'],
+            "installation_id": payload['installation']['id']
         }
         PullRequestEvent.objects.create(
             pr_number= payload['number'],
@@ -60,7 +61,7 @@ def github_webhook(request):
             author_avatar_url= payload['pull_request']['user']['avatar_url']
         )
         # create a celery task
-        print(context)
+        review_pr.delay(context)
         return HttpResponse("OK", status=200)
     
     return HttpResponseBadRequest()
