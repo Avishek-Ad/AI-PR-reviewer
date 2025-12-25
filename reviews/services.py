@@ -47,7 +47,7 @@ def get_diff_from_github(url, installation_id):
         "Accept": "application/vnd.github.v3.diff",
         "Authorization": f"Bearer {token}"
     }
-    print(token)
+    # print(token)
     response = requests.get(url, headers=headers)
     return response.text
 
@@ -116,3 +116,107 @@ def chunk_hunks(patch, token_limit=4000):
                 current_tokens += hunk_token
     if current_chunks:
         yield current_chunks
+
+def get_total_line_changed(patch):
+    added_lines = 0
+    removed_lines = 0
+    for patch_file in patch:
+        added_lines += patch_file.added
+        removed_lines += patch_file.removed
+    return added_lines + removed_lines
+
+def is_line_in_diff(patch_file, target_line_number):
+    for hunk in patch_file:
+        if hunk.target_start <= target_line_number < hunk.target_start + hunk.target_length:
+            for line in hunk:
+                if line.target_line_no == target_line_number and not line.is_removed:
+                    return True
+    return False
+
+def final_verification(patch, responses):
+    unique_responses = {}
+    number_of_line_changed = get_total_line_changed(patch)
+
+    # eg of responses
+    # ReviewResponse(reviews=[CodeReview(
+                                # file='README.md', 
+                                # line_number=4, 
+                                # type='readability', 
+                                # severity='minor', 
+                                # comment='informationkwjsdf.', 
+                                # suggestion='f the repository.', 
+                                # confidence_score=0.8), ...])
+    for response in responses:
+        for review in response.reviews:
+            if review.confidence_score < 0.6:
+                continue
+            
+            # filter out low severity and low confidence comment based on PR size
+            if number_of_line_changed > 1000 and review.severity != "critical":
+                continue
+            if number_of_line_changed > 500 and review.severity not in ['critical', 'major']:
+                continue
+
+            # ensure line number llm gave has a code + diff
+            # we have property hunk.target_start and hunk.target_length
+            for patch_file in patch:
+                does_exists = is_line_in_diff(patch_file, review.line_number)
+                if not does_exists:
+                    continue
+            
+            prev_review = unique_responses.get(f"{review.file}-{review.line_number}")
+            if prev_review:
+                if prev_review.severity == "critical":
+                    continue
+                if (review.confidence_score > prev_review.confidence_score) or review.severity == "critical":
+                    unique_responses[f"{review.file}-{review.line_number}"] = review
+            else:
+                unique_responses[f"{review.file}-{review.line_number}"] = review
+    return list(unique_responses.values())
+
+def clear_pending_reviews(token, repo_full_name, pull_number):
+    url = f"https://api.github.com/repos/{repo_full_name}/pulls/{pull_number}/reviews"
+    headers = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}
+    
+    reviews = requests.get(url, headers=headers).json()
+    
+    for r in reviews:
+        if r.get('state') == 'PENDING':
+            delete_url = f"{url}/{r['id']}"
+            requests.delete(delete_url, headers=headers)
+            # print(f"Deleted pending review {r['id']}")
+
+
+def post_review_to_github(context, reviews):
+    token = get_installation_token(context['installation_id'])
+    pull_number = context['pr_number']
+    repo_full_name = context['repo_full_name']
+
+    clear_pending_reviews(token, repo_full_name, pull_number)
+
+    url = f"https://api.github.com/repos/{repo_full_name}/pulls/{pull_number}/reviews"
+    
+    comments = []
+    for r in reviews:
+        comments.append({
+            "path": r.file,
+            "line": int(r.line_number),
+            "side": "RIGHT",
+            "body": f"**{r.type.upper()}** ({r.severity}): {r.comment}\n\n**Suggestion:** {r.suggestion}"
+        })
+    
+    payload = {
+        "event": "COMMENT",
+        "body": "AI Code Review Summary: I found some potential issues.",
+        "comments": comments
+    }
+
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {token}"
+    }
+    response = requests.post(url, json=payload, headers=headers)
+    if response.status_code != 200:
+        # print(f"GitHub API Error {response.status_code}: {response.text}")
+        return response.text
+    return response.json()

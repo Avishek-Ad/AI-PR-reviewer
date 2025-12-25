@@ -43,7 +43,7 @@ class PullRequestEvent(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['pr_number', 'task', 'action'],
+                fields=['pr_number', 'task', 'action', 'github_delivery_id'],
                 name="Duplicate_PR_received"
             )
         ]

@@ -2,13 +2,12 @@ from django.shortcuts import render, get_object_or_404, HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.core.cache import cache
-from github_app.models import GithubAppInstallation, Repository
+from github_app.models import Repository
 from .models import Task
 from django_htmx.http import HttpResponseClientRedirect
 from django.views.decorators.http import require_http_methods
 from django.urls import reverse
 from .services import _get_users_repos, filter_list_of_dicts
-from datetime import datetime
 
 @login_required(login_url='/')
 def task_create(request):
@@ -82,7 +81,7 @@ def task_events(request, repo_name):
                 'title': 'Feat: Add multi-file upload support',
                 'author': 'Avishek-Ad',
                 'author_avatar': 'https://github.com/Avishek-Ad.png',
-                'timestamp': datetime.now(timezone.utc),
+                'timestamp': timezone.now(),
                 'status': 'completed', # or 'processing'
                 'github_url': 'https://github.com/Avishek-Ad/file-share/pull/42'
             },
@@ -91,7 +90,7 @@ def task_events(request, repo_name):
                 'title': 'Feat: Add multi-file upload support',
                 'author': 'Avishek-Ad',
                 'author_avatar': 'https://github.com/Avishek-Ad.png',
-                'timestamp': datetime.now(timezone.utc),
+                'timestamp': timezone.now(),
                 'status': 'completed', # or 'processing'
                 'github_url': 'https://github.com/Avishek-Ad/file-share/pull/42'
             }

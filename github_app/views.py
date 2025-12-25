@@ -10,10 +10,10 @@ from reviews.tasks import review_pr
 
 @csrf_exempt
 def github_webhook(request):
-    print("PING")
+    # print("PING")
     raw_body = request.body # its in binary format
     if not raw_body:
-        print("ERROR")
+        # print("ERROR")
         return HttpResponseBadRequest("No body provided")
     # verify its form github using our secret key
     signature = request.headers.get('x-hub-signature-256')
@@ -47,7 +47,8 @@ def github_webhook(request):
             "post_url": payload['pull_request']['review_comments_url'],
             "commit_sha": payload['pull_request']['head']['sha'],
             "pr_number": payload['number'],
-            "installation_id": payload['installation']['id']
+            "installation_id": payload['installation']['id'],
+            "repo_full_name": payload['repository']['full_name']
         }
         PullRequestEvent.objects.create(
             pr_number= payload['number'],
