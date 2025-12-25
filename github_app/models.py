@@ -25,7 +25,7 @@ class Repository(models.Model):
     
     id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
     github_repo_id = models.BigIntegerField(unique=True)
-    full_name = models.CharField(max_length=200)
+    full_name = models.CharField(max_length=200, unique=True)
     github_app_installation = models.ForeignKey(GithubAppInstallation, related_name="repositories", on_delete=models.CASCADE)
     repo_url = models.URLField(max_length=200)
     is_private = models.BooleanField(default=False)

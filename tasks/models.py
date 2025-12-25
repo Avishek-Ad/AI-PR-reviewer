@@ -36,6 +36,8 @@ class PullRequestEvent(models.Model):
     github_delivery_id = models.UUIDField(unique=True)
     installation_id = models.BigIntegerField()
     github_repo_id = models.BigIntegerField()
+    author_name = models.CharField(max_length=100, default="")
+    author_avatar_url = models.URLField(max_length=200, default="")
     received_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

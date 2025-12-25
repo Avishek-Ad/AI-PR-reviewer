@@ -1,10 +1,12 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, get_object_or_404, HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.core.cache import cache
 from github_app.models import GithubAppInstallation, Repository
 from .models import Task
 from django_htmx.http import HttpResponseClientRedirect
+from django.views.decorators.http import require_http_methods
+from django.urls import reverse
 
 from allauth.socialaccount.models import SocialToken
 import requests
@@ -141,7 +143,7 @@ def task_create(request):
             user= request.user,
             status= Task.InstallationStatus.INSTALLED,
         )
-        return HttpResponseClientRedirect('dashboard-page')
+        return HttpResponseClientRedirect(reverse(viewname='dashboard-page'))
 
     # cache 10 minute
     repos = cache.get(f"{request.user.pk}-repos")
@@ -163,9 +165,18 @@ def task_create(request):
 
 @login_required(login_url='/')
 def task_events(request, repo_name):
+    print(repo_name)
+    repository = Repository.objects.filter(full_name=repo_name).first()
+    if not repository:
+        return render(request, 'tasks/task-events.html')
+    
+    task = request.user.tasks.filter(repository=repository).first()
+    if not task:
+        return render(request, 'tasks/task-events.html')
+    
     context = {
         'repo_name': repo_name, #'Avishek-Ad/file-share',
-        'repo_url': 'https://github.com/Avishek-Ad/file-share',
+        'repo_url': f"https://github.com/{repo_name}",
         'events': [
             {
                 'pr_number': 42,
@@ -176,6 +187,31 @@ def task_events(request, repo_name):
                 'status': 'completed', # or 'processing'
                 'github_url': 'https://github.com/Avishek-Ad/file-share/pull/42'
             },
+            {
+                'pr_number': 42,
+                'title': 'Feat: Add multi-file upload support',
+                'author': 'Avishek-Ad',
+                'author_avatar': 'https://github.com/Avishek-Ad.png',
+                'timestamp': datetime.now(timezone.utc),
+                'status': 'completed', # or 'processing'
+                'github_url': 'https://github.com/Avishek-Ad/file-share/pull/42'
+            }
         ]
     }
     return render(request, 'tasks/task-events.html', context)
+
+
+@login_required(login_url='/')
+@require_http_methods(['POST'])
+def task_toggle_active(request, task_id):
+    task = get_object_or_404(Task, id=task_id, user=request.user)
+    task.is_active = not(task.is_active)
+    task.save()
+    return render(request, 'main/partials/task-row.html', {'task':task})
+
+@login_required(login_url='/')
+@require_http_methods(['DELETE'])
+def task_delete(request, task_id):
+    task = get_object_or_404(Task, id=task_id, user=request.user)
+    task.delete()
+    return HttpResponse("")
