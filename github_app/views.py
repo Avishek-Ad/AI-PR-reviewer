@@ -1,79 +1,11 @@
-from django.shortcuts import render
-from django.http import HttpResponse
+from django.shortcuts import render, get_object_or_404
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseBadRequest, HttpResponseNotFound
 from django.views.decorators.csrf import csrf_exempt
 import json
-from tasks.models import Task
-from .models import Repository, GithubAppInstallation
+from .services import handle_task_related_event, is_comming_form_github
+from tasks.models import Task, PullRequestEvent
 from allauth.socialaccount.models import SocialAccount
-
-# for added and create
-def payload_added_create_event(payload):
-    social = SocialAccount.objects.filter(
-            uid=payload['sender']['id'],
-            provider='github'
-            ).first()
-
-    if not social:
-        return
-
-    user = social.user
-    pending_tasks = user.tasks.all()
-    if not pending_tasks.exists():
-        return
-    if payload['action'] == 'added':
-        repositories_list = payload['repositories_added']
-    else:
-        repositories_list = payload['repositories']
-    installation, _ = GithubAppInstallation.objects.get_or_create(
-        installation_id= payload['installation']['id'],
-        account_id= payload['sender']['id'],
-        user= user
-    )
-    for repo in repositories_list:
-        repository, _ = Repository.objects.get_or_create(
-            github_repo_id= repo['id'],
-            full_name= repo['full_name'],
-            github_app_installation= installation,
-            is_private= repo['private'],
-            repo_url= f"https://github.com/{repo['full_name']}"
-        )
-        task = pending_tasks.filter(
-            repository_github_id=repo["id"]
-        ).first()
-        if not task:
-            continue
-        task.repository = repository
-        task.status = Task.InstallationStatus.INSTALLED
-        task.save()
-    return
-
-# for remove and delete
-def payload_remove_delete_event(payload):
-    if payload['action'] == 'removed':
-        repositories_list = payload['repositories_removed']
-    else:
-        repositories_list = payload['repositories']
-    installation = GithubAppInstallation.objects.get(
-        installation_id= payload['installation']['id'],
-    )
-    if payload['action'] == 'deleted':
-        installation.delete()
-        return
-    for repo in repositories_list:
-        repository = Repository.objects.get(
-            github_repo_id= repo['id'],
-            full_name= repo['full_name'],
-        )
-        repository.delete()
-    return
-
-def handle_task_related_event(payload):
-    if payload['action'] in ['created', 'added']:
-        payload_added_create_event(payload)
-        return
-    else:
-        payload_remove_delete_event(payload)
-        return
+from github_app.models import Repository
 
 @csrf_exempt
 def github_webhook(request):
@@ -81,9 +13,55 @@ def github_webhook(request):
     raw_body = request.body # its in binary format
     if not raw_body:
         print("ERROR")
+        return HttpResponseBadRequest("No body provided")
+    # verify its form github using our secret key
+    signature = request.headers.get('x-hub-signature-256')
+    if not signature:
+        return HttpResponseForbidden("No Signature")
+    if not is_comming_form_github(signature, raw_body):
+        return HttpResponseForbidden("No Valid Signature")
+    
     payload = json.loads(raw_body.decode("utf-8"))
     if payload["action"] in ['created', 'added', 'removed', 'deleted']:
         handle_task_related_event(payload)
-        print("WE WILL HANDLE THIS TODAY")
-    return HttpResponse("OK", status=200)
+        return HttpResponse("OK", status=200)
+    
+    if payload['action'] in ['opened', 'synchronize']:
+        # check if we have task status installed with this repo id
+        payload_repo_id = payload['repository']['id']
+        # check if we have user with this id
+        payload_repo_owner_id = payload['repository']['owner']['id']
+        social_account = SocialAccount.objects.filter(uid=payload_repo_owner_id, provider='github').first()
+        if not social_account:
+            return HttpResponseNotFound()
+        user = social_account.user
+        print("user found")
+        task = get_object_or_404(Task, user=user, repository_github_id=payload_repo_id, status=Task.InstallationStatus.INSTALLED)
+        
+        delivery_id = request.headers.get("X-GitHub-Delivery")
+        was_this_pr_already_processed = task.pull_requests.filter(github_delivery_id=delivery_id).exists()
+        if was_this_pr_already_processed:
+            return HttpResponse("OK", status=200)
+        context = {
+            "diff_url": payload['pull_request']['diff_url'],
+            "post_url": payload['pull_request']['review_comments_url'],
+            "commit_sha": payload['pull_request']['head']['sha'],
+            "pr_number": payload['number']
+        }
+        PullRequestEvent.objects.create(
+            pr_number= payload['number'],
+            pr_url= payload['pull_request']['html_url'],
+            task= task,
+            action= payload['action'],
+            github_delivery_id= delivery_id,
+            installation_id= payload['installation']['id'],
+            github_repo_id= payload['repository']['id'],
+            author_name= payload['pull_request']['user']['login'],
+            author_avatar_url= payload['pull_request']['user']['avatar_url']
+        )
+        # create a celery task
+        print(context)
+        return HttpResponse("OK", status=200)
+    
+    return HttpResponseBadRequest()
     
