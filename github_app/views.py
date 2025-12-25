@@ -54,6 +54,7 @@ def github_webhook(request):
             pr_number= payload['number'],
             pr_url= payload['pull_request']['html_url'],
             task= task,
+            title= payload['pull_request']['title'],
             action= payload['action'],
             github_delivery_id= delivery_id,
             installation_id= payload['installation']['id'],

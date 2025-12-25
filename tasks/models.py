@@ -32,6 +32,7 @@ class PullRequestEvent(models.Model):
     pr_number = models.IntegerField()
     pr_url = models.URLField(max_length=200)
     task = models.ForeignKey(Task, related_name="pull_requests", on_delete=models.CASCADE)
+    title = models.CharField(max_length=400)
     action = models.CharField(max_length=50)
     github_delivery_id = models.UUIDField(unique=True)
     installation_id = models.BigIntegerField()

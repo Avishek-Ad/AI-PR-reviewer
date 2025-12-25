@@ -72,29 +72,12 @@ def task_events(request, repo_name):
     if not task:
         return render(request, 'tasks/task-events.html')
     
+    events = task.pull_requests.all()
+    
     context = {
         'repo_name': repo_name, #'Avishek-Ad/file-share',
         'repo_url': f"https://github.com/{repo_name}",
-        'events': [
-            {
-                'pr_number': 42,
-                'title': 'Feat: Add multi-file upload support',
-                'author': 'Avishek-Ad',
-                'author_avatar': 'https://github.com/Avishek-Ad.png',
-                'timestamp': timezone.now(),
-                'status': 'completed', # or 'processing'
-                'github_url': 'https://github.com/Avishek-Ad/file-share/pull/42'
-            },
-            {
-                'pr_number': 42,
-                'title': 'Feat: Add multi-file upload support',
-                'author': 'Avishek-Ad',
-                'author_avatar': 'https://github.com/Avishek-Ad.png',
-                'timestamp': timezone.now(),
-                'status': 'completed', # or 'processing'
-                'github_url': 'https://github.com/Avishek-Ad/file-share/pull/42'
-            }
-        ]
+        'events': events
     }
     return render(request, 'tasks/task-events.html', context)
 
