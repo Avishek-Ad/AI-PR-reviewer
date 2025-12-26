@@ -5,3 +5,8 @@ db.sqlite3
 .vscode
 demo.md
 demo1.md
+node_modules/
+db.sqlite3
+package-lock.json
+package.json
+static/css/input.css
