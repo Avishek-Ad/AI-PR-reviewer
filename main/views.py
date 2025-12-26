@@ -7,7 +7,7 @@ def home(request):
 
 @login_required(login_url='/')
 def dashboard(request):
-    tasks = request.user.tasks.all()
+    tasks = request.user.tasks.all().order_by('-created_at')
     total_reviews = PullRequestEvent.objects.all().count()
 
     search = request.GET.get('search', '').strip()

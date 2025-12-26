@@ -64,9 +64,7 @@ def task_create(request):
 @login_required(login_url='/')
 def task_events(request, repo_name):
     print(repo_name)
-    repository = Repository.objects.filter(full_name=repo_name).first()
-    if not repository:
-        return render(request, 'tasks/task-events.html')
+    repository = get_object_or_404(Repository, full_name=repo_name)
     
     task = request.user.tasks.filter(repository=repository).first()
     if not task:

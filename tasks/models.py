@@ -48,6 +48,7 @@ class PullRequestEvent(models.Model):
                 name="Duplicate_PR_received"
             )
         ]
+        ordering = ['-received_at']
 
     def __str__(self):
         return f"PR {self.task.repository.full_name} -> {self.pr_number}"
