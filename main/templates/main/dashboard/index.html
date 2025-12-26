@@ -4,26 +4,7 @@
 
 {% block content %}
 <div class="min-h-screen bg-slate-950 text-slate-200">
-    <nav class="border-b border-white/10 bg-slate-900/50 backdrop-blur-md sticky top-0 z-30">
-        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-            <div class="flex items-center gap-2 font-bold text-white">
-                <div class="w-8 h-8 bg-primary rounded flex items-center justify-center text-xs">AI</div>
-                <span>CodeReview</span>
-            </div>
-            <div class="flex items-center gap-5">
-                <div class="space-x-1">
-                    <span class="text-sm text-slate-400 font-bold">{{ user.username }}</span>
-                    <div class="avatar placeholder">
-                        <div class="bg-neutral text-neutral-content rounded-full w-8">
-                            <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}" alt="avatar">
-                        </div>
-                    </div>
-                </div>
-                <a href='{% url "account_logout" %}' class="btn btn-error btn-xs text-sm">Logout</a>
-            </div>
-        </div>
-    </nav>
-
+    {% include "main/dashboard/navbar.html" %}
     <main class="max-w-7xl mx-auto px-4 py-8">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
             <div>
@@ -37,7 +18,7 @@
             </a>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-6 mb-10">
             <div class="stats bg-slate-900 border border-white/5 shadow-lg">
                 <div class="stat">
                     <div class="stat-title text-slate-400">Total Reviews</div>
@@ -45,6 +26,7 @@
                     <div class="stat-desc text-slate-500">Across all repos</div>
                 </div>
             </div>
+
             <div class="stats bg-slate-900 border border-white/5 shadow-lg">
                 <div class="stat">
                     <div class="stat-title text-slate-400">Active Webhooks</div>
@@ -52,38 +34,42 @@
                     <div class="stat-desc text-slate-500">Connected repositories</div>
                 </div>
             </div>
+
+            <div class="stats bg-slate-900 border border-white/5 shadow-lg col-span-2 md:col-span-1">
+                <div class="stat">
+                    <div class="stat-title text-slate-400">
+                        Search Repository
+                        <span id="task-search-loading" class="loading loading-spinner text-secondary loading-xs htmx-indicator"></span>
+                    </div>
+                    <div class="stat-value py-2">
+                        <div class="flex items-center gap-3 bg-slate-800/50 rounded-lg px-3 py-1 border border-white/10 focus-within:border-secondary transition-colors">
+                            <svg class="h-5 w-5 text-secondary opacity-70" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                <g stroke-linejoin="round" stroke-linecap="round" stroke-width="2.5" fill="none" stroke="currentColor">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <path d="m21 21-4.3-4.3"></path>
+                                </g>
+                            </svg>
+                            <input 
+                                type="search" 
+                                placeholder="Search..."
+                                name="search"
+                                class="bg-transparent border-none outline-none focus:ring-0 text-base font-normal w-full text-white placeholder:text-slate-500" 
+                                hx-get='{% url "dashboard-page" %}'
+                                hx-target="#task-repo-table-container"
+                                hx-trigger="keyup changed delay:300ms"
+                                hx-swap="innerHTML"
+                                hx-indicator="#task-search-loading"
+                            />
+                        </div>
+                    </div>
+                    <div class="stat-desc text-slate-500">Filter by name</div>
+                </div>
+            </div>
         </div>
 
         <div class="card bg-slate-900 border border-white/10 overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="table">
-                    <thead class="bg-white/5 text-slate-300">
-                        <tr>
-                            <th>Repository</th>
-                            <th>Status</th>
-                            <th>Last Review</th>
-                            <th class="text-right">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody class="text-slate-400">
-                        {% if tasks %}
-                            {% for task in tasks %}
-                                {% include "main/partials/task-row.html" %}
-                            {% endfor %}
-                        {% else %}
-                        <tr>
-                            <td colspan="4" class="py-12 text-center">
-                                <div class="flex flex-col items-center opacity-50">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                                    </svg>
-                                    <p>No repositories connected yet.</p>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
+            <div id="task-repo-table-container" class="overflow-x-auto">
+                {% include "main/partials/task-repo-table.html" %}
             </div>
         </div>
     </main>

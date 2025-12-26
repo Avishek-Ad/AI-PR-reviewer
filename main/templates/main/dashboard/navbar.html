@@ -1,0 +1,19 @@
+<nav class="border-b border-white/10 bg-slate-900/50 backdrop-blur-md sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-2 font-bold text-white">
+            <div class="w-8 h-8 bg-primary rounded flex items-center justify-center text-xs">AI</div>
+            <span>CodeReview</span>
+        </div>
+        <div class="flex items-center gap-5">
+            <div class="space-x-1">
+                <span class="text-sm text-slate-400 font-bold">{{ user.username }}</span>
+                <div class="avatar placeholder">
+                    <div class="bg-neutral text-neutral-content rounded-full w-8">
+                        <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}" alt="avatar">
+                    </div>
+                </div>
+            </div>
+            <a href='{% url "account_logout" %}' class="btn btn-error btn-xs text-sm">Logout</a>
+        </div>
+    </div>
+</nav>

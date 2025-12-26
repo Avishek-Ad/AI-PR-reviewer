@@ -23,6 +23,10 @@ def github_webhook(request):
         return HttpResponseForbidden("No Valid Signature")
     
     payload = json.loads(raw_body.decode("utf-8"))
+    action = payload.get("action")
+    if not action:
+        return HttpResponse(status=204) # 2xx so github will not retry
+
     if payload["action"] in ['created', 'added', 'removed', 'deleted']:
         handle_task_related_event(payload)
         return HttpResponse("OK", status=200)
@@ -34,9 +38,19 @@ def github_webhook(request):
         payload_repo_owner_id = payload['repository']['owner']['id']
         social_account = SocialAccount.objects.filter(uid=payload_repo_owner_id, provider='github').first()
         if not social_account:
-            return HttpResponseNotFound()
+            return HttpResponse(status=204) # 2xx so github will not retry
         user = social_account.user
-        task = get_object_or_404(Task, user=user, repository_github_id=payload_repo_id, status=Task.InstallationStatus.INSTALLED)
+        task = Task.objects.filter(
+            user=user,
+            repository_github_id=payload_repo_id,
+            status=Task.InstallationStatus.INSTALLED
+        ).first()
+        if not task:
+            return HttpResponse(status=204) # 2xx so github will not retry
+        
+        # if task is present we also need to check if it is active if not bye bye
+        if not task.is_active:
+            return HttpResponse("OK", status=200) # 2XX so github will not retry
         
         delivery_id = request.headers.get("X-GitHub-Delivery")
         was_this_pr_already_processed = task.pull_requests.filter(github_delivery_id=delivery_id).exists()
