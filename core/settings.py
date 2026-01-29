@@ -27,7 +27,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'some-default-secret')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True if os.environ.get('DEBUG') == '1' else False
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['*', 'pr-reviewer.servehttp.com:8000']
 
 
 # Application definition
