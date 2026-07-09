@@ -28,6 +28,24 @@ The app listens to GitHub webhook events, fetches the PR diff using GitHub App a
 
 ## How It Works
 
+```mermaid
+sequenceDiagram
+    participant GitHub_Webhook as GitHub Webhook
+    participant Django_Backend as Django Backend
+    participant Redis_Broker as Redis Broker
+    participant Celery_Worker as Celery Worker
+    participant OpenAI_API as OpenAI API
+
+    GitHub_Webhook->>Django_Backend: Post PR Event (Secure/Idempotent)
+    Django_Backend->>Redis_Broker: Enqueue Async Task
+    Django_Backend-->>GitHub_Webhook: 202 Accepted (Non-blocking)
+    Redis_Broker->>Celery_Worker: Consume PR Analysis Task
+    Celery_Worker->>OpenAI_API: Analyze Code Diff
+    OpenAI_API-->>Celery_Worker: Return Review Comments
+    Celery_Worker->>GitHub_Webhook: Post Automated PR Comments
+```
+
+
 1. GitHub sends a `pull_request` webhook
 2. Signature is verified
 3. Task status and duplication are checked
